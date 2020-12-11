@@ -21,7 +21,7 @@ const BootcampSchema = new mongoose.Schema({
     website:{
         type:String,
         match:[
-            /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
+            /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/,
             'Please use a a valid URL with HTTP or HTTPS'
         ]
     },
@@ -75,7 +75,7 @@ const BootcampSchema = new mongoose.Schema({
         min:[1,'Rating must be atleast 1'],
         max:[10,'Rating cannot be more than 10'],
     },
-    averageCost:Number,
+    averageCost:{type:Number},
     photo:{
         type:String,
         default: 'no-phot.jpg'  
@@ -99,7 +99,17 @@ const BootcampSchema = new mongoose.Schema({
     createdAt:{
         type:Date,
         default:Date.now
+    },
+    user:{
+        type:mongoose.Schema.ObjectId,
+        ref:'User',
+        required:true
     }
+},
+{
+    toJSON:{virtuals:true},
+    toObject:{virtuals:true}
+    
 })
 
 //Create bootcamo slug for the name
@@ -111,23 +121,39 @@ BootcampSchema.pre('save',function(next) {
 
 // GEO-CODE Creat Location field
 
-BootcampSchema.pre('save', async function (next) {
-    const loc = await geocoder(this.address)
-    this.location = {
-        type: 'Point',
-        coordinates:[loc[0].longitude, loc[0].latitude],
-        formattedAddress: loc[0].formattedAddress,
-        street:loc[0].city,
-        city:loc[0].city,
-        state:loc[0].stateCode,
-        zipcode:loc[0].zipcode,
-        country:loc[0].countryCode
-    }
+// BootcampSchema.pre('save', async function (next) {
+//     const loc = await geocoder.geocode(this.address)
+//     this.location = {
+//         type: 'Point',
+//         coordinates:[loc[0].longitude, loc[0].latitude],
+//         formattedAddress: loc[0].formattedAddress,
+//         street:loc[0].street,
+//         city:loc[0].city,
+//         state:loc[0].stateCode,
+//         zipcode:loc[0].zipcode,
+//         country:loc[0].countryCode
+//     }
 
-    //Do not save address in DB
-    this.address = undefined
+//     //Do not save address in DB
+//     this.address = undefined
 
+//     next()
+// })
+
+//Cascade delete courses when a bootcamp is deleted
+BootcampSchema.pre('remove',async function(next){
+    console.log(`courses being removed from bootcamp ${this._id}`)
+    await this.model('Course').deleteMany({bootcamp:this._id})
     next()
+})
+
+
+//Reverse populae with virtuals
+BootcampSchema.virtual('courses',{
+    ref: 'Course',
+    localField:'_id',
+    foreignField: 'bootcamp',
+    justOne: false
 })
 
 module.exports = mongoose.model('Bootcamp',BootcampSchema) 

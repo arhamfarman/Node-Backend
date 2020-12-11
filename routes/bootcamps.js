@@ -5,15 +5,33 @@ const {
     postBootcamps,
     updateBootcamps,
     deleteBootcamps,
-    getOneBootcamps
+    getOneBootcamps,
+    bootcampPhotoUpload
 } = require('../controllers/bootcamps')
+
+const Bootcamp = require('../models/Bootcamps')
+
+const advancedResults = require('../middleware/advancedResults')
+
+
+// Include other resourse routers
+const courseRouter = require('./courses')
+const { protect,authorize } = require('../middleware/auth')
+
 
 const router  = express.Router();
 
-router.route('/').get(getBootcamps).post(postBootcamps);
 
-router.route('/:id').put(updateBootcamps)
-.delete(deleteBootcamps)
+//Re-route into other resours routers
+
+router.use('/:bootcampID/courses',courseRouter)
+
+router.route('/').get(getBootcamps).post(protect,authorize('publisher','admin'),postBootcamps);
+
+router.route('/:id').put(protect,authorize('publisher','admin'),updateBootcamps)
+.delete(protect,authorize('publisher','admin'),deleteBootcamps)
 .get(getOneBootcamps)
+
+router.route('/:id/photo').put(protect,authorize('publisher','admin'),bootcampPhotoUpload)
 
 module.exports = router;
