@@ -60,7 +60,7 @@ exports.getBootcamps = asyncHandler(async(req,res,next)=>{
  
 
 //@desc    Post a Bootcamp
-//@route   Post /api/v1/bootcamps/:id
+//@route   Post /api/v1/bootcamps/
 //@access  Public
 exports.postBootcamps = asyncHandler(async (req,res,next)=>{
 
@@ -94,9 +94,6 @@ exports.getOneBootcamps = asyncHandler(async(req,res,next)=>{
         }
         res.status(200).json({success:true,data:bootcamp})   
     })
-
-
-
 
 
 
